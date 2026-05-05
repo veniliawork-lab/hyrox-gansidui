@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Hyrox 敢死队</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:0 0 80px}
+.header{background:#fff;padding:16px;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10}
+.header-top{display:flex;align-items:center;justify-content:space-between}
+.team-name{font-size:18px;font-weight:600;color:#1a1a1a}
+.team-sub{font-size:12px;color:#888;margin-top:2px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#ccc;display:inline-block;margin-right:5px}
+.sync-dot.ok{background:#4CAF50}
+.sync-dot.syncing{background:#FF9800;animation:pulse 1s infinite}
+.sync-dot.err{background:#f44336}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-label{font-size:11px;color:#888}
+.nav{display:flex;background:#fff;border-bottom:1px solid #eee;position:sticky;top:61px;z-index:9}
+.nav button{flex:1;padding:12px 4px;border:none;background:transparent;font-size:13px;color:#888;cursor:pointer;border-bottom:2px solid transparent;font-weight:500}
+.nav button.active{color:#1a1a1a;border-bottom-color:#1a1a1a}
+.page{display:none;padding:16px}
+.page.active{display:block}
+.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.section-title{font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:12px}
+.label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+input[type=date],select{width:100%;padding:10px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;background:#fff;color:#1a1a1a;-webkit-appearance:none;margin-bottom:8px}
+.timer-display{font-size:56px;font-weight:300;letter-spacing:3px;text-align:center;padding:20px 0 8px;font-family:'Courier New',monospace;color:#1a1a1a}
+.timer-sub{text-align:center;font-size:13px;color:#888;margin-bottom:16px}
+.btn-row{display:flex;gap:8px;justify-content:center;margin-bottom:12px}
+.btn{padding:10px 22px;border-radius:10px;border:1.5px solid #e0e0e0;background:#fff;color:#1a1a1a;font-size:14px;font-weight:600;cursor:pointer}
+.btn:active{transform:scale(0.97)}
+.btn.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn.danger{border-color:#e53935;color:#e53935}
+.btn.success{border-color:#43a047;color:#43a047;background:#f1f8f1}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+.member-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.member-btn{padding:10px 12px;border-radius:10px;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;text-align:left}
+.member-btn.sel{border-color:#1a1a1a;background:#f9f9f9}
+.mname{font-size:13px;font-weight:600;color:#1a1a1a}
+.mnick{font-size:11px;color:#7c4dab;font-style:italic;margin-top:2px}
+.mstation{font-size:11px;color:#888;margin-top:2px}
+.avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-bottom:6px}
+.lap-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f9f9f9;border-radius:8px;margin-bottom:4px}
+.lap-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.lap-name{font-size:12px;color:#555;min-width:80px}
+.lap-split{font-size:14px;font-weight:700;font-family:'Courier New',monospace;color:#1a1a1a}
+.lap-total{font-size:11px;color:#aaa;font-family:'Courier New',monospace;margin-left:auto}
+.save-preview .split-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
+.save-preview .split-row:last-child{border-bottom:none;font-weight:700}
+.save-preview .split-time{font-family:'Courier New',monospace;font-weight:600}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat-card{background:#fff;border-radius:12px;padding:14px 8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.stat-val{font-size:24px;font-weight:700;color:#1a1a1a}
+.stat-lbl{font-size:10px;color:#888;margin-top:3px}
+.hist-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f5f5f5;cursor:pointer}
+.hist-row:last-child{border-bottom:none}
+.hist-row:active{opacity:0.7}
+.hdate{font-size:13px;color:#555}
+.hsplits{font-size:11px;color:#aaa;margin-top:3px}
+.htime{font-size:16px;font-weight:700;font-family:'Courier New',monospace}
+.badge-pr{font-size:10px;padding:2px 7px;border-radius:20px;background:#e8f5e9;color:#2e7d32;font-weight:600;margin-right:6px}
+.badge-tbc{font-size:10px;padding:2px 6px;border-radius:20px;background:#fff3e0;color:#e65100;font-weight:600}
+.stn-card{background:#fff;border-radius:12px;margin-bottom:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.stn-hdr{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.stn-hdr:active{background:#fafafa}
+.stn-title{font-size:14px;font-weight:600;color:#1a1a1a}
+.stn-sub{font-size:12px;color:#888;margin-top:2px}
+.stn-body{display:none;padding:0 16px 12px;border-top:1px solid #f5f5f5}
+.stn-body.open{display:block}
+.ex-row{padding:10px 0;border-bottom:1px solid #f5f5f5}
+.ex-row:last-child{border-bottom:none}
+.ex-top{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.ex-name{font-size:13px;font-weight:600;color:#1a1a1a}
+.ex-reps{font-size:12px;color:#888}
+.tag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600}
+.tag-main{background:#ede7f6;color:#512da8}
+.tag-run{background:#e0f2f1;color:#00695c}
+.tag-also{background:#fff3e0;color:#e65100}
+.ex-tip{font-size:12px;color:#888;margin-top:4px;line-height:1.5}
+.rec-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f5f5f5}
+.rec-row:last-child{border-bottom:none}
+.rec-info .rname{font-size:14px;font-weight:600}
+.rec-info .rnick{font-size:11px;color:#7c4dab;font-style:italic;margin-top:1px}
+.rec-info .rsub{font-size:11px;color:#aaa;margin-top:3px}
+.rec-best{margin-left:auto;text-align:right}
+.rec-best .rbval{font-size:17px;font-weight:700;font-family:'Courier New',monospace}
+.rec-best .rblbl{font-size:10px;color:#aaa;margin-top:2px}
+.empty{text-align:center;padding:32px 16px;color:#aaa;font-size:14px}
+.run-note{font-size:12px;color:#555;background:#e8f5e9;padding:10px 14px;border-radius:8px;margin-bottom:12px;line-height:1.5}
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100}
+.spinner{width:36px;height:36px;border:3px solid #eee;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.7s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:14px;color:#888">Loading 敢死队 data...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="team-name">Hyrox 敢死队</div>
+        <div class="team-sub">Laurina · Jeat Yin · Venilia · Lynna</div>
+      </div>
+      <div style="text-align:right">
+        <div><span class="sync-dot" id="sync-dot"></span><span class="sync-label" id="sync-label">Connecting...</span></div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px" id="hdr-date"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="active" onclick="showPage('timer',this)">Timer</button>
+    <button onclick="showPage('history',this)">History</button>
+    <button onclick="showPage('training',this)">Training</button>
+    <button onclick="showPage('records',this)">Records</button>
+  </div>
+
+  <!-- TIMER -->
+  <div class="page active" id="page-timer">
+    <div class="card">
+      <div class="label">Session setup</div>
+      <input type="date" id="sess-date">
+      <select id="sess-type" onchange="onTypeChange()">
+        <option value="full">Full relay run</option>
+        <option value="individual">Individual station</option>
+      </select>
+    </div>
+
+    <div class="card" id="pick-card" style="display:none">
+      <div class="label" style="margin-bottom:10px">Who is being timed?</div>
+      <div class="member-grid" id="member-btns"></div>
+    </div>
+
+    <div class="card">
+      <div class="timer-display" id="main-timer">00:00.0</div>
+      <div class="timer-sub" id="timer-status">Ready to start</div>
+      <div class="btn-row">
+        <button class="btn primary" id="startbtn" onclick="startStop()">Start</button>
+        <button class="btn" onclick="lapTime()" id="lapbtn" disabled>Lap</button>
+        <button class="btn danger" onclick="resetTimer()">Reset</button>
+      </div>
+      <div id="laps-wrap"></div>
+    </div>
+
+    <div class="card" id="save-card" style="display:none">
+      <div class="section-title">Save session</div>
+      <div class="save-preview" id="save-preview"></div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn success" onclick="saveSession()" id="save-btn">Save & Sync</button>
+        <button class="btn" onclick="document.getElementById('save-card').style.display='none'">Discard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="s-days">0</div><div class="stat-lbl">Training days</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-sess">0</div><div class="stat-lbl">Sessions</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-best">—</div><div class="stat-lbl">Best relay</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">All sessions</div>
+      <div id="hist-list"><div class="empty">No sessions yet. 出发！</div></div>
+    </div>
+  </div>
+
+  <!-- TRAINING -->
+  <div class="page" id="page-training">
+    <div class="run-note">Running 1 km between every station — all 4 members must train this. Don't skip the run! 🏃</div>
+    <div id="stn-list"></div>
+  </div>
+
+  <!-- RECORDS -->
+  <div class="page" id="page-records">
+    <div class="card">
+      <div class="section-title">Personal bests</div>
+      <div id="rec-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BIN_KEY = '$2a$10$fUnyI6Eyc075K1MwGFN6Fu7KEu6D3nYUfdbLjDJkxnrP.pRE1cHLi';
+const BIN_NAME = 'hyrox-gansidui';
+let BIN_ID = localStorage.getItem('hyrox_bin_id') || null;
+
+const members = [
+  {name:'Laurina',  nick:'Anxiety Coach',               initials:'LA', bg:'#ede7f6', fg:'#512da8'},
+  {name:'Jeat Yin', nick:'Chill Coach',                  initials:'JY', bg:'#e0f2f1', fg:'#00695c'},
+  {name:'Venilia',  nick:'Excited Coach',                initials:'VE', bg:'#fce4ec', fg:'#880e4f'},
+  {name:'Lynna',    nick:'Good Morning Good Night Student', initials:'LY', bg:'#fff3e0', fg:'#e65100'}
+];
+
+const stations = [
+  {id:0, title:'Station 1 — SkiErg', exercises:[
+    {name:'SkiErg', reps:'1000 m', tip:'Even pull rhythm, engage core. Target sub 4:20.', type:'main'},
+    {name:'1 km run', reps:'before & after', tip:"Don't sprint out — save energy.", type:'run'},
+    {name:'Sled Push', reps:'50 m (neighbour)', tip:'Low hips, drive through heels.', type:'also'}
+  ]},
+  {id:1, title:'Station 2 — Sled Push / Pull', exercises:[
+    {name:'Sled Push', reps:'50 m @ race weight', tip:'Low hips, flat back, powerful leg drive.', type:'main'},
+    {name:'Sled Pull', reps:'50 m rope pull', tip:'Alternate arms, lean back slightly.', type:'main'},
+    {name:'1 km run', reps:'before & after', tip:'Control breathing on transitions.', type:'run'},
+    {name:'Burpee Broad Jump', reps:'80 reps (neighbour)', tip:'Explosive forward jump, full burpee.', type:'also'}
+  ]},
+  {id:2, title:'Station 3 — Rowing + Farmers Carry', exercises:[
+    {name:'Rowing', reps:'1000 m', tip:'Legs drive first, then back, then arms. Target sub 4:00.', type:'main'},
+    {name:'Farmers Carry', reps:'200 m @ 24 kg/hand', tip:'Shoulders packed, core tight, brisk walk.', type:'main'},
+    {name:'1 km run', reps:'before & after', tip:'Maintain pace between transitions.', type:'run'},
+    {name:'Wall Balls', reps:'100 reps @ 6 kg (neighbour)', tip:'Full squat, explode up, hit the target.', type:'also'}
+  ]},
+  {id:3, title:'Station 4 — Sandbag Lunges + Wall Balls', exercises:[
+    {name:'Sandbag Lunges', reps:'100 m @ 10 kg', tip:'Alternate legs, torso upright, steady pace.', type:'main'},
+    {name:'Wall Balls', reps:'100 reps @ 6 kg', tip:'Full squat, no pausing, consistent rhythm.', type:'main'},
+    {name:'1 km run', reps:'before & after', tip:'Finish strong — last leg!', type:'run'},
+    {name:'Rowing', reps:'500 m (neighbour)', tip:'Good technique even when tired.', type:'also'}
+  ]}
+];
+
+let interval=null, running=false, tStart=0, elapsed=0, laps=[], selMember=0;
+let sessions=[];
+
+// ── JSONBin helpers ──────────────────────────────────────────
+function setSyncStatus(state, text){
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  dot.className='sync-dot '+state;
+  lbl.textContent=text;
+}
+
+async function initBin(){
+  if(BIN_ID){
+    await loadFromBin();
+    return;
+  }
+  try{
+    setSyncStatus('syncing','Creating database...');
+    const r=await fetch('https://api.jsonbin.io/v3/b',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Master-Key':BIN_KEY,'X-Bin-Name':BIN_NAME,'X-Bin-Private':'false'},
+      body:JSON.stringify({sessions:[]})
+    });
+    const d=await r.json();
+    BIN_ID=d.metadata.id;
+    localStorage.setItem('hyrox_bin_id',BIN_ID);
+    sessions=[];
+    setSyncStatus('ok','Synced');
+  }catch(e){
+    setSyncStatus('err','Offline');
+    loadLocal();
+  }
+  hideLoading();
+}
+
+async function loadFromBin(){
+  try{
+    setSyncStatus('syncing','Syncing...');
+    const r=await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{
+      headers:{'X-Master-Key':BIN_KEY}
+    });
+    const d=await r.json();
+    sessions=d.record.sessions||[];
+    saveLocal();
+    setSyncStatus('ok','Synced');
+  }catch(e){
+    setSyncStatus('err','Offline — local data');
+    loadLocal();
+  }
+  hideLoading();
+}
+
+async function saveToBin(){
+  if(!BIN_ID)return;
+  try{
+    setSyncStatus('syncing','Saving...');
+    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':BIN_KEY},
+      body:JSON.stringify({sessions})
+    });
+    saveLocal();
+    setSyncStatus('ok','Synced');
+  }catch(e){
+    setSyncStatus('err','Save failed — check connection');
+    saveLocal();
+  }
+}
+
+function saveLocal(){localStorage.setItem('hyrox_sessions_cache',JSON.stringify(sessions));}
+function loadLocal(){try{const d=localStorage.getItem('hyrox_sessions_cache');if(d)sessions=JSON.parse(d);}catch(e){}}
+function hideLoading(){document.getElementById('loading').style.display='none';}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── UI helpers ───────────────────────────────────────────────
+document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+document.getElementById('sess-date').value=new Date().toISOString().split('T')[0];
+
+function buildMemberBtns(){
+  document.getElementById('member-btns').innerHTML=members.map((m,i)=>`
+    <button class="member-btn${i===selMember?' sel':''}" onclick="selM(${i})">
+      <div class="avatar" style="background:${m.bg};color:${m.fg}">${m.initials}</div>
+      <div class="mname">${m.name}</div>
+      <div class="mnick">${m.nick}</div>
+      <div class="mstation">Station: <span class="badge-tbc">TBC</span></div>
+    </button>`).join('');
+}
+buildMemberBtns();
+
+function showPage(p,btn){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  btn.classList.add('active');
+  if(p==='history'){loadFromBin().then(renderHistory);}
+  if(p==='records')renderRecords();
+  if(p==='training')renderTraining();
+}
+
+function onTypeChange(){
+  document.getElementById('pick-card').style.display=
+    document.getElementById('sess-type').value==='individual'?'block':'none';
+}
+function selM(i){selMember=i;buildMemberBtns();}
+
+// ── Timer ────────────────────────────────────────────────────
+function fmt(ms){
+  const t=Math.floor(ms/100),d=t%10,s=Math.floor(t/10)%60,m=Math.floor(t/600);
+  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+'.'+d;
+}
+function tick(){document.getElementById('main-timer').textContent=fmt(elapsed+(performance.now()-tStart));}
+
+function startStop(){
+  if(!running){
+    tStart=performance.now();running=true;
+    interval=setInterval(tick,100);
+    document.getElementById('startbtn').textContent='Pause';
+    document.getElementById('lapbtn').disabled=false;
+    document.getElementById('timer-status').textContent='Running... 加油！';
+    document.getElementById('save-card').style.display='none';
+  } else {
+    elapsed+=performance.now()-tStart;
+    clearInterval(interval);running=false;
+    document.getElementById('startbtn').textContent='Resume';
+    document.getElementById('lapbtn').disabled=true;
+    document.getElementById('timer-status').textContent='Paused';
+    showSaveCard();
+  }
+}
+
+function lapTime(){
+  const now=elapsed+(performance.now()-tStart);
+  const type=document.getElementById('sess-type').value;
+  const label=type==='full'?(laps.length<4?members[laps.length].name:'Lap '+(laps.length+1)):members[selMember].name;
+  const prev=laps.length?laps[laps.length-1].total:0;
+  laps.push({label,total:now,split:now-prev});
+  renderLaps();
+}
+
+function renderLaps(){
+  document.getElementById('laps-wrap').innerHTML=laps.map(l=>{
+    const m=members.find(x=>x.name===l.label);
+    return `<div class="lap-item">
+      ${m?`<div class="lap-av" style="background:${m.bg};color:${m.fg}">${m.initials}</div>`:''}
+      <span class="lap-name">${l.label}</span>
+      <span class="lap-split">${fmt(l.split)}</span>
+      <span class="lap-total">${fmt(l.total)}</span>
+    </div>`;
+  }).join('');
+}
+
+function resetTimer(){
+  clearInterval(interval);running=false;elapsed=0;tStart=0;laps=[];
+  document.getElementById('main-timer').textContent='00:00.0';
+  document.getElementById('startbtn').textContent='Start';
+  document.getElementById('lapbtn').disabled=true;
+  document.getElementById('timer-status').textContent='Ready to start';
+  document.getElementById('laps-wrap').innerHTML='';
+  document.getElementById('save-card').style.display='none';
+}
+
+function showSaveCard(){
+  if(!elapsed)return;
+  document.getElementById('save-card').style.display='block';
+  const rows=laps.map(l=>`<div class="split-row"><span>${l.label}</span><span class="split-time">${fmt(l.split)}</span></div>`).join('');
+  document.getElementById('save-preview').innerHTML=rows+
+    `<div class="split-row"><span><strong>Total</strong></span><span class="split-time"><strong>${fmt(elapsed)}</strong></span></div>`;
+}
+
+async function saveSession(){
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true;btn.textContent='Saving...';
+  const date=document.getElementById('sess-date').value;
+  const type=document.getElementById('sess-type').value;
+  sessions.unshift({date,type,total:elapsed,laps:[...laps],ts:Date.now()});
+  await saveToBin();
+  btn.disabled=false;btn.textContent='Save & Sync';
+  document.getElementById('save-card').style.display='none';
+  resetTimer();
+  showToast('Saved! 好样的 敢死队 💪');
+}
+
+// ── History ──────────────────────────────────────────────────
+function renderHistory(){
+  updateStats();
+  const ul=document.getElementById('hist-list');
+  if(!sessions.length){ul.innerHTML='<div class="empty">No sessions yet. 出发！</div>';return;}
+  ul.innerHTML=sessions.map((s,i)=>{
+    const prev=sessions.filter((x,j)=>j>i&&x.type===s.type);
+    const isPR=prev.length>0&&s.total<Math.min(...prev.map(x=>x.total));
+    const d=new Date(s.date+'T00:00').toLocaleDateString('en-MY',{day:'numeric',month:'short',year:'numeric'});
+    return `<div class="hist-row" onclick="detail(${i})">
+      <div>
+        <div class="hdate">${d} · ${s.type==='full'?'Full relay':'Individual'}</div>
+        ${s.laps.length?`<div class="hsplits">${s.laps.map(l=>l.label+': '+fmt(l.split)).join(' · ')}</div>`:''}
+      </div>
+      <div style="display:flex;align-items:center;flex-shrink:0;margin-left:8px">
+        ${isPR?'<span class="badge-pr">PR</span>':''}
+        <span class="htime">${fmt(s.total)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats(){
+  document.getElementById('s-days').textContent=new Set(sessions.map(s=>s.date)).size;
+  document.getElementById('s-sess').textContent=sessions.length;
+  const f=sessions.filter(s=>s.type==='full');
+  document.getElementById('s-best').textContent=f.length?fmt(Math.min(...f.map(s=>s.total))):'—';
+}
+
+function detail(i){
+  const s=sessions[i];
+  const d=new Date(s.date+'T00:00').toLocaleDateString('en-MY',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  let msg=`${d}\nType: ${s.type==='full'?'Full relay':'Individual'}\nTotal: ${fmt(s.total)}`;
+  if(s.laps.length)msg+='\n\nSplits:\n'+s.laps.map(l=>`${l.label}: ${fmt(l.split)}`).join('\n');
+  alert(msg);
+}
+
+// ── Training ─────────────────────────────────────────────────
+function renderTraining(){
+  document.getElementById('stn-list').innerHTML=stations.map(st=>`
+    <div class="stn-card">
+      <div class="stn-hdr" onclick="toggleStn(${st.id})">
+        <div>
+          <div class="stn-title">${st.title}</div>
+          <div class="stn-sub">Assigned: <span class="badge-tbc">TBC</span></div>
+        </div>
+        <span style="font-size:20px;color:#aaa" id="arr-${st.id}">+</span>
+      </div>
+      <div class="stn-body" id="stn-${st.id}">
+        ${st.exercises.map(ex=>`
+          <div class="ex-row">
+            <div class="ex-top">
+              <span class="ex-name">${ex.name}</span>
+              <span class="ex-reps">· ${ex.reps}</span>
+              <span class="tag ${ex.type==='main'?'tag-main':ex.type==='run'?'tag-run':'tag-also'}">${ex.type==='main'?'main':ex.type==='run'?'all members':'also train'}</span>
+            </div>
+            <div class="ex-tip">${ex.tip}</div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function toggleStn(id){
+  const b=document.getElementById('stn-'+id),a=document.getElementById('arr-'+id);
+  const o=b.classList.toggle('open');a.textContent=o?'−':'+';
+}
+
+// ── Records ──────────────────────────────────────────────────
+function renderRecords(){
+  const rec={};
+  members.forEach(m=>{rec[m.name]={best:null,count:0};});
+  sessions.forEach(s=>s.laps.forEach(l=>{
+    if(rec[l.label]){rec[l.label].count++;if(rec[l.label].best===null||l.split<rec[l.label].best)rec[l.label].best=l.split;}
+  }));
+  document.getElementById('rec-list').innerHTML=members.map(m=>{
+    const r=rec[m.name];
+    return `<div class="rec-row">
+      <div class="avatar" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;background:${m.bg};color:${m.fg}">${m.initials}</div>
+      <div class="rec-info">
+        <div class="rname">${m.name}</div>
+        <div class="rnick">${m.nick}</div>
+        <div class="rsub">${r.count} session${r.count!==1?'s':''} · <span class="badge-tbc">TBC</span></div>
+      </div>
+      <div class="rec-best">
+        <div class="rbval">${r.best!==null?fmt(r.best):'—'}</div>
+        <div class="rblbl">${r.best!==null?'personal best':'no data yet'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Init ─────────────────────────────────────────────────────
+renderTraining();
+renderRecords();
+initBin();
+</script>
+</body>
+</html>
