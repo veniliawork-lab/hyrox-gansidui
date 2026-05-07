@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>HYROX Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:0 0 80px}
+.screen{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:200;display:flex;flex-direction:column;overflow-y:auto}
+.sbody{padding:28px 20px;flex:1}
+.sfooter{padding:14px 20px;border-top:1px solid #f0f0f0;display:flex;gap:10px}
+h1{font-size:24px;font-weight:800;margin-bottom:8px}
+.sub{font-size:13px;color:#888;margin-bottom:24px;line-height:1.6}
+.ocard{border:1.5px solid #e0e0e0;border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px;background:#fff}
+.ocard:active{background:#f5f5f5}
+.oicon{font-size:26px;flex-shrink:0;width:36px;text-align:center}
+.otitle{font-size:15px;font-weight:700}
+.osub{font-size:12px;color:#888;margin-top:3px}
+.prog{height:3px;background:#f0f0f0}
+.progf{height:100%;background:#1a1a1a;border-radius:3px;transition:width 0.3s}
+.wlbl{font-size:11px;color:#888;padding:10px 20px 0;font-weight:500}
+.wbody{padding:16px 20px;flex:1;overflow-y:auto}
+.wtitle{font-size:20px;font-weight:700;margin-bottom:5px}
+.wsub{font-size:13px;color:#888;margin-bottom:14px;line-height:1.5}
+.inp{width:100%;padding:11px 13px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:15px;background:#fff;color:#1a1a1a;margin-bottom:10px}
+.inp:focus{outline:none;border-color:#1a1a1a}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.fcard{padding:14px 6px;border-radius:12px;border:1.5px solid #e0e0e0;cursor:pointer;text-align:center}
+.fcard.sel{border-color:#1a1a1a;background:#f9f9f9}
+.ficon{font-size:24px;margin-bottom:4px}
+.ftitle{font-size:13px;font-weight:600}
+.fsub{font-size:10px;color:#888;margin-top:2px;line-height:1.4}
+.mcard{background:#f9f9f9;border-radius:10px;padding:12px;margin-bottom:8px}
+.nick{width:100%;padding:7px 10px;border:1px solid #e8d5f5;border-radius:8px;font-size:12px;color:#7c4dab;font-style:italic;background:#f9f0ff;margin-top:4px}
+.nick:focus{outline:none;border-color:#7c4dab}
+.rbox{background:#fff8e1;border:1.5px solid #ffe082;border-radius:12px;padding:14px;margin-bottom:14px}
+.rtitle{font-size:13px;font-weight:600;color:#f57f17;margin-bottom:3px}
+.rsub{font-size:12px;color:#795548;line-height:1.5}
+.codebox{background:#f0f7ff;border:1.5px solid #3d5afe;border-radius:12px;padding:16px;text-align:center;margin-bottom:14px}
+.codelbl{font-size:11px;color:#3d5afe;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600}
+.codetext{font-size:13px;font-weight:700;font-family:'Courier New',monospace;color:#1a1a1a;word-break:break-all;line-height:1.8}
+.codecopy{font-size:12px;color:#3d5afe;margin-top:10px;cursor:pointer;font-weight:500}
+.joinarea{width:100%;padding:12px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:12px;font-family:'Courier New',monospace;background:#fff;color:#1a1a1a;resize:none;height:80px;line-height:1.6}
+.joinarea:focus{outline:none;border-color:#1a1a1a}
+.header{background:#fff;padding:13px 15px;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10}
+.htop{display:flex;align-items:center;justify-content:space-between}
+.hname{font-size:16px;font-weight:700}
+.hmem{font-size:11px;color:#888;margin-top:1px}
+.sdot{width:8px;height:8px;border-radius:50%;background:#ccc;display:inline-block;margin-right:4px}
+.sdot.ok{background:#4CAF50}.sdot.syncing{background:#FF9800;animation:p 1s infinite}.sdot.err{background:#f44336}
+@keyframes p{0%,100%{opacity:1}50%{opacity:0.4}}
+.slbl{font-size:11px;color:#888}
+.nav{display:flex;background:#fff;border-bottom:1px solid #eee;position:sticky;top:54px;z-index:9}
+.nav button{flex:1;padding:10px 2px;border:none;background:transparent;font-size:12px;color:#888;cursor:pointer;border-bottom:2px solid transparent;font-weight:500}
+.nav button.active{color:#1a1a1a;border-bottom-color:#1a1a1a}
+.page{display:none;padding:13px}.page.active{display:block}
+.card{background:#fff;border-radius:12px;padding:13px 15px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.stitle{font-size:14px;font-weight:600;margin-bottom:11px}
+.lbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+input[type=date]{width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;background:#fff;color:#1a1a1a;-webkit-appearance:none;margin-bottom:8px}
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.mbtn{padding:9px 4px;border-radius:10px;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;text-align:center;font-size:12px;font-weight:600;color:#888;line-height:1.4}
+.mbtn.sel{border-color:#1a1a1a;background:#1a1a1a;color:#fff}
+.mdesc{font-size:11px;color:#666;background:#f9f9f9;padding:7px 10px;border-radius:8px;margin-bottom:8px;line-height:1.6}
+.pbar{display:flex;gap:3px;margin-bottom:9px;flex-wrap:wrap}
+.ppill{flex:1;min-width:44px;padding:6px 3px;border-radius:7px;text-align:center;font-size:9px;font-weight:600;background:#f0f0f0;color:#aaa;line-height:1.4}
+.ppill.active{background:#1a1a1a;color:#fff}.ppill.done{background:#e8f5e9;color:#2e7d32}
+.tphase{text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px;min-height:16px;padding:0 8px}
+.tdisp{font-size:52px;font-weight:300;letter-spacing:3px;text-align:center;padding:10px 0 4px;font-family:'Courier New',monospace}
+.tsub{text-align:center;font-size:12px;color:#888;margin-bottom:9px}
+.lsplits{display:flex;gap:6px;justify-content:center;margin-bottom:9px;min-height:24px;flex-wrap:wrap}
+.sbadge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;font-family:'Courier New',monospace}
+.sbadge.run{background:#e0f2f1;color:#00695c}.sbadge.stn{background:#ede7f6;color:#512da8}
+.brow{display:flex;gap:8px;justify-content:center;margin-bottom:9px}
+.btn{padding:10px 16px;border-radius:10px;border:1.5px solid #e0e0e0;background:#fff;color:#1a1a1a;font-size:13px;font-weight:600;cursor:pointer}
+.btn:active{transform:scale(0.97)}
+.btn.p{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn.d{border-color:#e53935;color:#e53935}
+.btn.s{border-color:#43a047;color:#43a047;background:#f1f8f1}
+.btn.l{border-color:#512da8;color:#512da8;background:#f3f0ff}
+.btn:disabled{opacity:0.35;cursor:not-allowed}
+.btn.fw{width:100%;padding:13px;font-size:14px}
+.laps{margin-top:4px}
+.li{display:flex;align-items:center;gap:5px;padding:6px 8px;border-radius:8px;margin-bottom:3px}
+.li.r{background:#e8f5e9}.li.st{background:#ede7f6}
+.lav{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0}
+.ll{font-size:11px;color:#555;flex:1}
+.lt{font-size:9px;padding:1px 5px;border-radius:10px;font-weight:700;flex-shrink:0}
+.lt.r{background:#e0f2f1;color:#00695c}.lt.s{background:#ede7f6;color:#512da8}
+.ls{font-size:12px;font-weight:700;font-family:'Courier New',monospace}
+.sp .sr{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.sp .sr:last-child{border-bottom:none;font-weight:700}
+.sp .st2{font-family:'Courier New',monospace;font-weight:600}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
+.sc{background:#fff;border-radius:12px;padding:11px 6px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.sv{font-size:21px;font-weight:700}.sl{font-size:10px;color:#888;margin-top:2px}
+.hr{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5;cursor:pointer}
+.hr:last-child{border-bottom:none}.hr:active{opacity:0.7}
+.hd{font-size:12px;color:#555}.hs{font-size:10px;color:#aaa;margin-top:2px;line-height:1.5}
+.ht{font-size:14px;font-weight:700;font-family:'Courier New',monospace}
+.bpr{font-size:10px;padding:2px 5px;border-radius:20px;background:#e8f5e9;color:#2e7d32;font-weight:600;margin-right:4px}
+.bhalf{font-size:10px;padding:2px 5px;border-radius:20px;background:#e3f2fd;color:#1565c0;font-weight:600;margin-right:3px}
+.bfull{font-size:10px;padding:2px 5px;border-radius:20px;background:#f3e5f5;color:#6a1b9a;font-weight:600;margin-right:3px}
+.bind{font-size:10px;padding:2px 5px;border-radius:20px;background:#fce4ec;color:#880e4f;font-weight:600;margin-right:3px}
+.btbc{font-size:10px;padding:2px 5px;border-radius:20px;background:#fff3e0;color:#e65100;font-weight:600}
+.stncard{background:#fff;border-radius:12px;margin-bottom:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.stnhdr{padding:11px 13px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.stnhdr:active{background:#fafafa}
+.stnnum{font-size:10px;font-weight:700;color:#fff;background:#1a1a1a;padding:2px 6px;border-radius:20px;margin-right:6px;flex-shrink:0}
+.stntitle{font-size:13px;font-weight:600}.stnsub{font-size:11px;color:#888;margin-top:2px}
+.stnbody{display:none;padding:0 13px 11px;border-top:1px solid #f5f5f5}.stnbody.open{display:block}
+.exrow{padding:7px 0;border-bottom:1px solid #f5f5f5}.exrow:last-child{border-bottom:none}
+.extop{display:flex;align-items:center;flex-wrap:wrap;gap:3px}
+.exn{font-size:12px;font-weight:600}.exr{font-size:11px;color:#555}
+.exh{font-size:10px;color:#1565c0;background:#e3f2fd;padding:1px 5px;border-radius:10px;font-weight:600}
+.tag{font-size:10px;padding:1px 6px;border-radius:20px;font-weight:600}
+.tm{background:#ede7f6;color:#512da8}.tr{background:#e0f2f1;color:#00695c}.ta{background:#fff3e0;color:#e65100}
+.ext{font-size:11px;color:#888;margin-top:3px;line-height:1.5}
+.rrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f5f5f5}.rrow:last-child{border-bottom:none}
+.sinp{width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;background:#fff;color:#1a1a1a;margin-bottom:7px}
+.sinp:focus{outline:none;border-color:#1a1a1a}
+.ssel{width:100%;padding:8px 10px;border:1px solid #e0e0e0;border-radius:8px;font-size:12px;background:#fff;color:#1a1a1a;-webkit-appearance:none;margin-bottom:6px}
+.sab{width:100%;padding:12px;background:#1a1a1a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px}
+.sab:active{opacity:0.85}
+.db{width:100%;padding:11px;background:#fff;color:#e53935;border:1.5px solid #e53935;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px}
+.empty{text-align:center;padding:28px 16px;color:#aaa;font-size:13px}
+.rnote{font-size:11px;background:#e8f5e9;padding:8px 12px;border-radius:8px;margin-bottom:8px;line-height:1.6}
+.rcnote{font-size:11px;background:#ede7f6;padding:8px 12px;border-radius:8px;margin-bottom:8px;line-height:1.6}
+.inote{font-size:11px;background:#fff3e0;padding:8px 12px;border-radius:8px;margin-bottom:10px;line-height:1.6}
+.loader{position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:500}
+.spin{width:34px;height:34px;border:3px solid #eee;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.7s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:78px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="loader" id="loader"><div class="spin"></div><div style="font-size:13px;color:#888;font-weight:500">HYROX Tracker</div></div>
+<div class="toast" id="toast"></div>
+
+<!-- WELCOME -->
+<div class="screen" id="s-welcome" style="display:none">
+  <div class="sbody" style="padding-top:40px">
+    <div style="font-size:44px;margin-bottom:14px">🏋️</div>
+    <h1>HYROX Tracker</h1>
+    <div class="sub">Track training, beat records, sync with your team in real time.</div>
+    <div class="ocard" onclick="goSetup()"><div class="oicon">✨</div><div><div class="otitle">Create new team</div><div class="osub">Set up your team from scratch</div></div></div>
+    <div class="ocard" onclick="goJoin()"><div class="oicon">🔗</div><div><div class="otitle">Join existing team</div><div class="osub">Enter team code to sync with everyone</div></div></div>
+  </div>
+</div>
+
+<!-- JOIN -->
+<div class="screen" id="s-join" style="display:none">
+  <div class="sbody" style="padding-top:40px">
+    <div style="font-size:36px;margin-bottom:12px">🔗</div>
+    <h1>Join Team</h1>
+    <div class="sub">Paste the Team Code your team leader shared with you.</div>
+    <textarea class="joinarea" id="join-in" placeholder="Paste team code here..."></textarea>
+    <div id="join-err" style="color:#e53935;font-size:12px;margin-top:6px;display:none">❌ Team not found. Check the code and try again.</div>
+  </div>
+  <div class="sfooter">
+    <button class="btn fw" onclick="SS('s-welcome')" style="flex:1">Back</button>
+    <button class="btn p fw" id="join-btn" onclick="doJoin()" style="flex:2">Join Team</button>
+  </div>
+</div>
+
+<!-- WIZARD -->
+<div class="screen" id="s-setup" style="display:none">
+  <div class="wlbl" id="wlbl">Step 1 of 3</div>
+  <div class="prog"><div class="progf" id="wprog" style="width:33%"></div></div>
+  <div class="wbody" id="wbody"></div>
+  <div class="sfooter">
+    <button class="btn" id="wback" onclick="wBack()" style="display:none;padding:13px 16px">Back</button>
+    <button class="btn p fw" id="wnext" onclick="wNext()">Continue</button>
+  </div>
+</div>
+
+<!-- CODE SCREEN -->
+<div class="screen" id="s-code" style="display:none">
+  <div class="sbody" style="padding-top:40px">
+    <div style="font-size:40px;margin-bottom:12px">🎉</div>
+    <h1>Team created!</h1>
+    <div class="sub">Share this code with teammates. They open the app → Join existing team → paste code → fully synced!</div>
+    <div class="codebox">
+      <div class="codelbl">Your Team Code</div>
+      <div class="codetext" id="code-show">—</div>
+      <div class="codecopy" onclick="copyCode()">📋 Tap to copy & share via WhatsApp</div>
+    </div>
+    <div style="font-size:12px;color:#aaa;text-align:center;line-height:1.6">You can assign stations anytime in ⚙️ Settings</div>
+  </div>
+  <div class="sfooter">
+    <button class="btn p fw" onclick="enterApp()">Start Training 🔥</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" style="display:none">
+ <div class="app">
+  <div class="header">
+    <div class="htop">
+      <div><div class="hname" id="hdr-name">HYROX Tracker</div><div class="hmem" id="hdr-mem"></div></div>
+      <div style="text-align:right">
+        <div><span class="sdot" id="sdot"></span><span class="slbl" id="slbl">—</span></div>
+        <div style="font-size:10px;color:#aaa;margin-top:1px" id="hdr-date"></div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="active" onclick="SP('timer',this)">Timer</button>
+    <button onclick="SP('history',this)">History</button>
+    <button onclick="SP('training',this)">Training</button>
+    <button onclick="SP('records',this)">Records</button>
+    <button onclick="SP('settings',this)">⚙️</button>
+  </div>
+
+  <div class="page active" id="p-timer">
+    <div class="card">
+      <div class="lbl">Date</div><input type="date" id="sess-date">
+      <div class="lbl">Simulation</div>
+      <div class="mgrid">
+        <button class="mbtn sel" onclick="setMode('full',this)">🏁 Full<br><span style="font-size:10px;font-weight:400">1km+full</span></button>
+        <button class="mbtn" onclick="setMode('half',this)">⚡ Half<br><span style="font-size:10px;font-weight:400">500m+half</span></button>
+        <button class="mbtn" onclick="setMode('solo',this)">👤 Solo<br><span style="font-size:10px;font-weight:400">1 person</span></button>
+      </div>
+      <div class="mdesc" id="mdesc">🏁 Full — follows official race order. Tap LAP at each transition.</div>
+    </div>
+    <div class="card" id="pick-card" style="display:none">
+      <div class="lbl" style="margin-bottom:8px">Who is being timed?</div>
+      <div id="mbtns" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+    </div>
+    <div class="card">
+      <div class="pbar" id="pbar"></div>
+      <div class="tphase" id="tphase" style="color:#888">—</div>
+      <div class="tdisp" id="tdisp">00:00.0</div>
+      <div class="tsub" id="tsub">Ready — press Start</div>
+      <div class="lsplits" id="lsplits"></div>
+      <div class="brow">
+        <button class="btn p" id="startbtn" onclick="startStop()">Start</button>
+        <button class="btn l" onclick="markLap()" id="lapbtn" disabled>Lap</button>
+        <button class="btn d" onclick="resetTimer()">Reset</button>
+      </div>
+      <div class="laps" id="laps"></div>
+    </div>
+    <div class="card" id="save-card" style="display:none">
+      <div class="stitle">Save session</div>
+      <div class="sp" id="save-prev"></div>
+      <div style="display:flex;gap:8px;margin-top:11px">
+        <button class="btn s" id="save-btn" onclick="saveSession()">Save & Sync</button>
+        <button class="btn" onclick="document.getElementById('save-card').style.display='none'">Discard</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="p-history">
+    <div class="sgrid">
+      <div class="sc"><div class="sv" id="s-days">0</div><div class="sl">Training days</div></div>
+      <div class="sc"><div class="sv" id="s-sess">0</div><div class="sl">Sessions</div></div>
+      <div class="sc"><div class="sv" id="s-best">—</div><div class="sl">Best full</div></div>
+    </div>
+    <div class="card"><div class="stitle">All sessions</div><div id="hlist"><div class="empty">No sessions yet!</div></div></div>
+  </div>
+
+  <div class="page" id="p-training">
+    <div class="rnote">🏃 1km run before every station (500m for half). ALL members train ALL stations!</div>
+    <div class="rcnote">📋 Official: 1-SkiErg · 2-Sled Push · 3-Sled Pull · 4-Burpee BJ · 5-Rowing · 6-Farmers Carry · 7-Sandbag · 8-Wall Balls</div>
+    <div id="stn-list"></div>
+  </div>
+
+  <div class="page" id="p-records">
+    <div class="card"><div class="stitle">Personal bests</div><div id="rec-list"></div></div>
+  </div>
+
+  <div class="page" id="p-settings">
+    <div class="card">
+      <div class="stitle">🔗 Team Code</div>
+      <div class="inote">Share with teammates → Join existing team → paste code → synced instantly!</div>
+      <div class="codebox" style="margin-bottom:6px">
+        <div class="codelbl">Team Code</div>
+        <div class="codetext" id="set-code">—</div>
+        <div class="codecopy" onclick="copyCode()">📋 Tap to copy & share</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="stitle">🏷️ Team Info</div>
+      <div class="lbl">Team name</div><input class="sinp" id="set-tname" placeholder="Team name">
+      <div class="lbl">Format</div>
+      <select class="ssel" id="set-fmt" style="margin-bottom:8px">
+        <option value="1">Solo — 1 person, all 8 stations</option>
+        <option value="2">Double — 2 people, train everything</option>
+        <option value="4">Relay — 4 people, 2 stations each</option>
+      </select>
+      <button class="sab" onclick="saveTeamInfo()">Save Team Info</button>
+    </div>
+    <div class="card">
+      <div class="stitle">👥 Member Names</div>
+      <div id="set-mlist"></div>
+      <button class="sab" onclick="saveMembers()">Save Names</button>
+    </div>
+    <div class="card" id="set-acard">
+      <div class="stitle">🏋️ Station Assignments</div>
+      <div class="inote" id="set-ainfo">Assign stations so timer follows official race order.</div>
+      <div id="set-alist"></div>
+      <button class="sab" onclick="saveAssignments()">Save & Sync Assignments</button>
+    </div>
+    <div class="card">
+      <div class="stitle">⚠️ Reset</div>
+      <button class="db" onclick="doReset()">🔄 Reset & Start Over</button>
+    </div>
+  </div>
+ </div>
+</div>
+
+<script>
+// ─── FIREBASE CONFIG ─────────────────────────────────────
+const FB_URL='https://hyrox-tracker-33dab-default-rtdb.asia-southeast1.firebasedatabase.app';
+
+// Firebase REST API helpers — no SDK needed!
+async function fbGet(path){
+  const r=await fetch(FB_URL+path+'.json');
+  if(!r.ok)throw new Error('FB read error: '+r.status);
+  return await r.json();
+}
+async function fbSet(path,data){
+  const r=await fetch(FB_URL+path+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  if(!r.ok)throw new Error('FB write error: '+r.status);
+  return await r.json();
+}
+async function fbPush(path,data){
+  const r=await fetch(FB_URL+path+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  if(!r.ok)throw new Error('FB push error: '+r.status);
+  return await r.json();
+}
+
+// ─── CONSTANTS ───────────────────────────────────────────
+const SOPTS=[{v:'tbc',l:'— Not assigned yet —'},{v:'s1',l:'Stn 1 — SkiErg'},{v:'s2',l:'Stn 2 — Sled Push'},{v:'s3',l:'Stn 3 — Sled Pull'},{v:'s4',l:'Stn 4 — Burpee BJ'},{v:'s5',l:'Stn 5 — Rowing'},{v:'s6',l:'Stn 6 — Farmers Carry'},{v:'s7',l:'Stn 7 — Sandbag Lunges'},{v:'s8',l:'Stn 8 — Wall Balls'}];
+const SORD=['s1','s2','s3','s4','s5','s6','s7','s8'];
+const SS_S={tbc:'TBC',s1:'SkiErg',s2:'Sled Push',s3:'Sled Pull',s4:'Burpee BJ',s5:'Rowing',s6:'Farmers Carry',s7:'Sandbag Lunges',s8:'Wall Balls'};
+const SS_F={tbc:'TBC',s1:'SkiErg 1000m',s2:'Sled Push 50m',s3:'Sled Pull 50m',s4:'Burpee BJ 80m',s5:'Rowing 1000m',s6:'Farmers Carry 200m',s7:'Sandbag 100m',s8:'Wall Balls 100 reps'};
+const SS_H={tbc:'TBC',s1:'SkiErg 500m',s2:'Sled Push 25m',s3:'Sled Pull 25m',s4:'Burpee BJ 40m',s5:'Rowing 500m',s6:'Farmers Carry 100m',s7:'Sandbag 50m',s8:'Wall Balls 50 reps'};
+const CBG=['#ede7f6','#e0f2f1','#fce4ec','#fff3e0','#e3f2fd','#f3e5f5','#e8f5e9','#fff8e1'];
+const CFG=['#512da8','#00695c','#880e4f','#e65100','#1565c0','#6a1b9a','#2e7d32','#f57f17'];
+const STNS=[
+  {id:0,key:'s1',num:1,title:'SkiErg',full:'1000m',half:'500m',ex:[{n:'SkiErg',f:'1000m',h:'500m',t:'Even rhythm, drive from hips. Target sub 4:20.',ty:'main'},{n:'Run',f:'1km',h:'500m',t:'Controlled pace — save energy.',ty:'run'},{n:'Sled Push (neighbour)',f:'50m',h:'25m',t:'Also train station 2.',ty:'also'}]},
+  {id:1,key:'s2',num:2,title:'Sled Push',full:'50m',half:'25m',ex:[{n:'Sled Push',f:'50m',h:'25m',t:'Low angle, short steps, flat back.',ty:'main'},{n:'Run',f:'1km',h:'500m',t:'Breathe and recover.',ty:'run'},{n:'Sled Pull (neighbour)',f:'50m',h:'25m',t:'Also train station 3.',ty:'also'}]},
+  {id:2,key:'s3',num:3,title:'Sled Pull',full:'50m',half:'25m',ex:[{n:'Sled Pull',f:'50m',h:'25m',t:'Drag backwards, alternate arms.',ty:'main'},{n:'Run',f:'1km',h:'500m',t:'Shake hands out.',ty:'run'},{n:'Burpee BJ (neighbour)',f:'80m',h:'40m',t:'Practice station 4.',ty:'also'}]},
+  {id:3,key:'s4',num:4,title:'Burpee BJ',full:'80m',half:'40m',ex:[{n:'Burpee Broad Jump',f:'80m',h:'40m',t:'Full burpee + explosive jump. Steady rhythm.',ty:'main'},{n:'Run',f:'1km',h:'500m',t:'Midpoint — run steady.',ty:'run'},{n:'Rowing (neighbour)',f:'500m',h:'250m',t:'Also train station 5.',ty:'also'}]},
+  {id:4,key:'s5',num:5,title:'Rowing',full:'1000m',half:'500m',ex:[{n:'Rowing',f:'1000m',h:'500m',t:'Legs first, back lean, arms. Target sub 4:00.',ty:'main'},{n:'Run',f:'1km',h:'500m',t:'Manage pace.',ty:'run'},{n:'Farmers Carry (neighbour)',f:'200m',h:'100m',t:'Train grip for station 6.',ty:'also'}]},
+  {id:5,key:'s6',num:6,title:'Farmers Carry',full:'200m',half:'100m',ex:[{n:'Farmers Carry',f:'200m @ 24kg',h:'100m @ 24kg',t:'Shoulders packed, core braced.',ty:'main'},{n:'Run',f:'1km',h:'500m',t:'Shake hands during run.',ty:'run'},{n:'Sandbag Lunges (neighbour)',f:'100m',h:'50m',t:'Prep for station 7.',ty:'also'}]},
+  {id:6,key:'s7',num:7,title:'Sandbag Lunges',full:'100m',half:'50m',ex:[{n:'Sandbag Lunges',f:'100m @ 10kg',h:'50m @ 10kg',t:'Alternate legs, torso upright.',ty:'main'},{n:'Run',f:'1km',h:'500m',t:'Push hard.',ty:'run'},{n:'Wall Balls (neighbour)',f:'100 reps',h:'50 reps',t:'Practice the finish.',ty:'also'}]},
+  {id:7,key:'s8',num:8,title:'Wall Balls',full:'100 reps',half:'50 reps',ex:[{n:'Wall Balls',f:'100 reps @ 6kg',h:'50 reps @ 6kg',t:'Full squat, explode up, hit target!',ty:'main'},{n:'Final run',f:'1km',h:'500m',t:'Last run — give everything!',ty:'run'}]},
+];
+const MDESC={full:'🏁 Full — follows official race order. Tap LAP at each transition.',half:'⚡ Half — 500m run + half distances. Tap LAP at each transition.',solo:'👤 Solo — one person\'s run then station. Tap LAP after run.'};
+
+// ─── STATE ────────────────────────────────────────────────
+let TEAM_ID=null; // Firebase path key e.g. "teams/abc123"
+let tName='HYROX Team',tFmt=4;
+let members=[],asgn={},sessions=[];
+let tInt=null,running=false,tStart=0,elapsed=0,laps=[],curMode='full',selM=0,phases=[],curPh=0;
+let wStep=0,wData={};
+
+// ─── UTILS ────────────────────────────────────────────────
+const ini=n=>(n||'').trim().split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'??';
+const cbg=i=>CBG[i%CBG.length];
+const cfg=i=>CFG[i%CFG.length];
+const fmt=ms=>{const t=Math.floor(ms/100),d=t%10,s=Math.floor(t/10)%60,m=Math.floor(t/600);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+'.'+d;};
+const toast=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);};
+const hideLoader=()=>document.getElementById('loader').style.display='none';
+function SS(id){document.querySelectorAll('.screen').forEach(s=>s.style.display='none');if(id){const e=document.getElementById(id);if(e)e.style.display='flex';}}
+const slabel=name=>{const k=asgn[name];if(!k||k.every(x=>x==='tbc'))return'TBC';return k.filter(x=>x&&x!=='tbc').map(x=>SS_S[x]).join(' + ');};
+
+// ─── SYNC STATUS ─────────────────────────────────────────
+function syncSt(s,t){document.getElementById('sdot').className='sdot '+s;document.getElementById('slbl').textContent=t;}
+
+// ─── FIREBASE SYNC ────────────────────────────────────────
+// Team code IS the Firebase push key — simple & reliable!
+async function createTeam(){
+  const teamData={tName,tFmt,members,asgn,sessions:[],createdAt:Date.now()};
+  // Push creates a unique key automatically
+  const result=await fbPush('/teams',teamData);
+  return result.name; // Firebase push returns {name: "-abc123xyz"}
+}
+
+async function loadTeam(){
+  try{
+    syncSt('syncing','Syncing...');
+    const data=await fbGet('/teams/'+TEAM_ID);
+    if(!data)throw new Error('Team not found');
+    tName=data.tName||tName;
+    tFmt=data.tFmt||tFmt;
+    members=data.members||members;
+    asgn=data.asgn||asgn;
+    // Convert sessions object to array if needed
+    if(data.sessions&&typeof data.sessions==='object'&&!Array.isArray(data.sessions)){
+      sessions=Object.values(data.sessions).sort((a,b)=>b.ts-a.ts);
+    } else {
+      sessions=data.sessions||[];
+    }
+    saveLocal();
+    syncSt('ok','Synced');
+    return true;
+  }catch(e){
+    console.error('Load error:',e);
+    syncSt('err','Offline — local data');
+    loadLocal();
+    return false;
+  }
+}
+
+async function saveTeam(){
+  if(!TEAM_ID){saveLocal();return;}
+  try{
+    syncSt('syncing','Saving...');
+    await fbSet('/teams/'+TEAM_ID,{tName,tFmt,members,asgn,sessions,updatedAt:Date.now()});
+    saveLocal();
+    syncSt('ok','Synced');
+  }catch(e){
+    console.error('Save error:',e);
+    syncSt('err','Saved locally');
+    saveLocal();
+  }
+}
+
+function saveLocal(){localStorage.setItem('hyrox_fb',JSON.stringify({tName,tFmt,members,asgn,sessions,TEAM_ID}));}
+function loadLocal(){
+  try{
+    const d=localStorage.getItem('hyrox_fb');
+    if(d){const p=JSON.parse(d);tName=p.tName||tName;tFmt=p.tFmt||tFmt;members=p.members||[];asgn=p.asgn||{};sessions=p.sessions||[];TEAM_ID=p.TEAM_ID||null;}
+  }catch(e){}
+}
+
+function copyCode(){
+  const c=TEAM_ID||'';
+  if(!c){toast('No code yet');return;}
+  if(navigator.clipboard){navigator.clipboard.writeText(c).then(()=>toast('Copied! 📋 Paste in WhatsApp'));}
+  else{try{const ta=document.createElement('textarea');ta.value=c;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Copied! 📋');}catch(e){toast('Code: '+c);}}
+}
+
+// ─── WELCOME / JOIN ───────────────────────────────────────
+function goSetup(){wStep=0;wData={teamName:'',format:4,members:[],asgn:{}};SS('s-setup');renderWiz();}
+function goJoin(){SS('s-join');setTimeout(()=>{const e=document.getElementById('join-in');if(e)e.focus();},200);}
+
+async function doJoin(){
+  const raw=(document.getElementById('join-in').value||'').trim().replace(/\s+/g,'');
+  if(!raw){toast('Please paste your team code');return;}
+  const btn=document.getElementById('join-btn');
+  btn.disabled=true;btn.textContent='Joining...';
+  document.getElementById('join-err').style.display='none';
+  try{
+    const data=await fbGet('/teams/'+raw);
+    if(!data)throw new Error('Not found');
+    TEAM_ID=raw;
+    tName=data.tName||'HYROX Team';tFmt=data.tFmt||4;
+    members=data.members||[];asgn=data.asgn||{};
+    if(data.sessions&&typeof data.sessions==='object'&&!Array.isArray(data.sessions)){
+      sessions=Object.values(data.sessions).sort((a,b)=>b.ts-a.ts);
+    }else{sessions=data.sessions||[];}
+    saveLocal();localStorage.setItem('hyrox_ok','1');
+    btn.disabled=false;btn.textContent='Join Team';
+    enterApp();
+    toast('Joined '+tName+'! 🎉');
+  }catch(e){
+    document.getElementById('join-err').style.display='block';
+    btn.disabled=false;btn.textContent='Join Team';
+  }
+}
+
+// ─── WIZARD ───────────────────────────────────────────────
+function renderWiz(){
+  document.getElementById('wprog').style.width=((wStep+1)/3*100)+'%';
+  document.getElementById('wlbl').textContent='Step '+(wStep+1)+' of 3';
+  document.getElementById('wback').style.display=wStep>0?'inline-block':'none';
+  document.getElementById('wnext').textContent=wStep===2?'Create Team 🔥':'Continue';
+  const body=document.getElementById('wbody');
+
+  if(wStep===0){
+    body.innerHTML='<div class="wtitle">👋 Welcome!</div><div class="wsub">Set up your team in 3 quick steps.</div>'
+      +'<div class="lbl">Team name</div><input class="inp" id="w-tn" placeholder="e.g. HYROX Warriors" value="'+(wData.teamName||'')+'">'
+      +'<div class="lbl" style="margin-top:4px">Format</div>'
+      +'<div class="fgrid" style="margin-top:8px">'
+      +'<div class="fcard'+(wData.format===1?' sel':'')+'" onclick="wF(1,this)"><div class="ficon">🧍</div><div class="ftitle">Solo</div><div class="fsub">1 person<br>all 8 stations</div></div>'
+      +'<div class="fcard'+(wData.format===2?' sel':'')+'" onclick="wF(2,this)"><div class="ficon">👫</div><div class="ftitle">Double</div><div class="fsub">2 people<br>train everything</div></div>'
+      +'<div class="fcard'+(wData.format===4?' sel':'')+'" onclick="wF(4,this)"><div class="ficon">👥</div><div class="ftitle">Relay</div><div class="fsub">4 people<br>2 stations each</div></div>'
+      +'</div>';
+    setTimeout(()=>{const e=document.getElementById('w-tn');if(e)e.focus();},150);
+  }
+  else if(wStep===1){
+    const fmt=wData.format||4;
+    let html='<div class="wtitle">👤 Members</div><div class="wsub">Enter names for all '+fmt+' member'+(fmt>1?'s':'')+'. Nicknames optional.</div>';
+    for(let i=0;i<fmt;i++){
+      const m=wData.members[i]||{name:'',nick:''};
+      html+='<div class="mcard"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:30px;height:30px;border-radius:50%;background:'+cbg(i)+';color:'+cfg(i)+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700" id="wav'+i+'">'+(m.name?ini(m.name):(i+1))+'</div><div style="font-size:13px;font-weight:600">Member '+(i+1)+'</div></div><input class="inp" style="margin-bottom:4px" placeholder="Name" id="wn'+i+'" value="'+(m.name||'')+'" oninput="wAv('+i+')"><input class="nick" placeholder="Nickname (optional)" id="wk'+i+'" value="'+(m.nick||'')+'"></div>';
+    }
+    body.innerHTML=html;
+  }
+  else{
+    const fmt=wData.format||4;
+    if(fmt<=2){
+      body.innerHTML='<div class="wtitle">🏁 Stations</div><div class="rbox"><div class="rtitle">'+(fmt===1?'Solo — All 8 stations':'Double — Train everything')+'</div><div class="rsub">'+(fmt===1?'Timer runs through all 8 stations automatically!':'Both members train ALL stations. Assign who leads each later in ⚙️ Settings.')+'</div></div><div class="wsub">Tap "Create Team" to continue. Assign anytime in ⚙️ Settings.</div>';
+    }else{
+      let html='<div class="wtitle">🏁 Assign Stations</div><div class="rbox"><div class="rtitle">⏭️ You can skip this!</div><div class="rsub">Tap "Create Team 🔥" to skip. Assign anytime in ⚙️ Settings. Timer still works without it.</div></div>';
+      (wData.members||[]).forEach((m,mi)=>{
+        const cur=wData.asgn[m.name]||[];
+        html+='<div class="mcard"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:50%;background:'+cbg(mi)+';color:'+cfg(mi)+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">'+ini(m.name)+'</div><div style="font-size:13px;font-weight:600">'+m.name+'</div></div>';
+        for(let s=0;s<2;s++){html+='<div style="font-size:11px;color:#888;margin-bottom:3px">Station '+(s+1)+' (optional):</div><select class="ssel" style="margin-bottom:7px" id="wa'+mi+'_'+s+'">'+SOPTS.map(o=>'<option value="'+o.v+'"'+(cur[s]===o.v?' selected':'')+'>'+o.l+'</option>').join('')+'</select>';}
+        html+='</div>';
+      });
+      body.innerHTML=html;
+    }
+  }
+}
+
+function wF(f,el){wData.format=f;document.querySelectorAll('.fcard').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
+function wAv(i){const e=document.getElementById('wn'+i),a=document.getElementById('wav'+i);if(e&&a)a.textContent=e.value?ini(e.value):(i+1)+'';}
+function wBack(){if(wStep>0){wStep--;renderWiz();}}
+
+async function wNext(){
+  const nb=document.getElementById('wnext');
+  if(wStep===0){
+    const tn=(document.getElementById('w-tn')||{}).value||'';
+    if(!tn.trim()){toast('Please enter a team name');return;}
+    wData.teamName=tn.trim();if(!wData.format)wData.format=4;
+  }
+  else if(wStep===1){
+    const fmt=wData.format||4;wData.members=[];
+    for(let i=0;i<fmt;i++){
+      const n=((document.getElementById('wn'+i)||{}).value||'Member '+(i+1)).trim();
+      const k=((document.getElementById('wk'+i)||{}).value||'').trim();
+      wData.members.push({name:n,nick:k});
+    }
+    if(!wData.asgn)wData.asgn={};
+  }
+  else{
+    const fmt=wData.format||4;
+    if(fmt>2){
+      (wData.members||[]).forEach((m,mi)=>{
+        const keys=[];
+        for(let s=0;s<2;s++){const e=document.getElementById('wa'+mi+'_'+s);keys.push(e?e.value:'tbc');}
+        wData.asgn[m.name]=keys;
+      });
+    }
+    // Apply state
+    tName=wData.teamName;tFmt=wData.format;members=wData.members;asgn=wData.asgn||{};sessions=[];
+    nb.disabled=true;nb.textContent='Creating team...';
+    try{
+      TEAM_ID=await createTeam();
+      saveLocal();localStorage.setItem('hyrox_ok','1');
+      document.getElementById('code-show').textContent=TEAM_ID;
+      document.getElementById('set-code').textContent=TEAM_ID;
+      SS('s-code');
+      toast('Team created! 🎉');
+    }catch(e){
+      console.error('Create team error:',e);
+      toast('Connection error — check internet and try again');
+    }
+    nb.disabled=false;nb.textContent='Create Team 🔥';
+    return;
+  }
+  wStep++;renderWiz();
+}
+
+// ─── ENTER APP ────────────────────────────────────────────
+function enterApp(){
+  document.querySelectorAll('.screen').forEach(s=>s.style.display='none');
+  document.getElementById('main-app').style.display='block';
+  initApp();
+}
+
+function initApp(){
+  updateHdr();
+  document.getElementById('sess-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short'});
+  document.getElementById('set-code').textContent=TEAM_ID||'—';
+  buildMBtns();buildPhases();buildPBar();updatePLabel();
+  renderTraining();renderRecords();buildSettings();
+  // Background sync
+  if(TEAM_ID){loadTeam().then(()=>{updateHdr();buildMBtns();renderRecords();renderTraining();}).catch(()=>{});}
+}
+
+function updateHdr(){
+  document.getElementById('hdr-name').textContent=tName;
+  document.getElementById('hdr-mem').textContent=members.map(m=>m.name).join(' · ');
+}
+
+// ─── TIMER ────────────────────────────────────────────────
+function buildMBtns(){
+  document.getElementById('mbtns').innerHTML=members.map((m,i)=>'<button style="padding:10px;border-radius:10px;border:1.5px solid '+(i===selM?'#1a1a1a':'#e0e0e0')+';background:'+(i===selM?'#f9f9f9':'#fff')+';cursor:pointer;text-align:left;width:100%" onclick="selMem('+i+')"><div style="width:22px;height:22px;border-radius:50%;background:'+cbg(i)+';color:'+cfg(i)+';display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;margin-bottom:4px">'+ini(m.name)+'</div><div style="font-size:12px;font-weight:600">'+m.name+'</div>'+(m.nick?'<div style="font-size:10px;color:#7c4dab;font-style:italic;margin-top:1px">'+m.nick+'</div>':'')+'<div style="font-size:10px;color:#888;margin-top:2px">'+slabel(m.name)+'</div></button>').join('');
+}
+
+function buildPhases(){
+  phases=[];
+  if(curMode==='solo'){
+    const m=members[selM]||members[0];if(!m)return;
+    phases=[{label:m.name+' Run',type:'run',member:m.name},{label:m.name+' Station',type:'station',member:m.name}];
+  }else if(tFmt===1){
+    SORD.forEach(k=>{const m=members[0];phases.push({label:'Run → '+SS_S[k],type:'run',member:m?m.name:'',sk:k});phases.push({label:SS_S[k],type:'station',member:m?m.name:'',sk:k});});
+  }else{
+    const seq=[];
+    members.forEach(m=>{(asgn[m.name]||[]).filter(k=>k&&k!=='tbc').forEach(k=>{const idx=SORD.indexOf(k);if(idx>=0)seq.push({member:m.name,sk:k,order:idx});});});
+    seq.sort((a,b)=>a.order-b.order);
+    if(seq.length){seq.forEach(s=>{phases.push({label:s.member+' Run',type:'run',member:s.member,sk:s.sk});phases.push({label:s.member+' '+SS_S[s.sk],type:'station',member:s.member,sk:s.sk});});}
+    else{members.forEach(m=>{phases.push({label:m.name+' Run',type:'run',member:m.name});phases.push({label:m.name+' Station',type:'station',member:m.name});});}
+  }
+  curPh=0;
+}
+
+function buildPBar(){
+  const bar=document.getElementById('pbar');
+  if(curMode==='solo'){bar.innerHTML='<div class="ppill'+(curPh===0?' active':curPh>0?' done':'')+'" id="pp0">🏃 Run</div><div class="ppill'+(curPh===1?' active':curPh>1?' done':'')+'" id="pp1">💪 Stn</div>';return;}
+  if(tFmt===1){bar.innerHTML=SORD.map((k,i)=>{const pi=i*2;const st=curPh>pi+1?'done':curPh>=pi&&curPh<=pi+1?'active':'';return'<div class="ppill '+st+'" id="pp'+i+'" style="font-size:8px">'+STNS[i].num+'<br>'+STNS[i].title.split(' ')[0]+'</div>';}).join('');return;}
+  const mp={};phases.forEach((ph,i)=>{if(!mp[ph.member])mp[ph.member]=[];mp[ph.member].push(i);});
+  bar.innerHTML=members.map((m,mi)=>{const idxs=mp[m.name]||[];if(!idxs.length)return'';const fi=idxs[0],li=idxs[idxs.length-1];const st=curPh>li?'done':curPh>=fi&&curPh<=li?'active':'';return'<div class="ppill '+st+'" id="ppm'+mi+'"><div style="width:12px;height:12px;border-radius:50%;background:'+(st==='active'?'rgba(255,255,255,0.3)':cbg(mi))+';color:'+(st==='active'?'#fff':cfg(mi))+';display:inline-flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;vertical-align:middle;margin-right:1px">'+ini(m.name)+'</div>'+m.name.split(' ')[0]+'</div>';}).join('');
+}
+
+function refPBar(){
+  if(curMode==='solo'){[0,1].forEach(i=>{const p=document.getElementById('pp'+i);if(p)p.className='ppill'+(curPh===i?' active':curPh>i?' done':'');});return;}
+  if(tFmt===1){SORD.forEach((k,i)=>{const p=document.getElementById('pp'+i);if(!p)return;const pi=i*2;p.className='ppill'+(curPh>pi+1?' done':curPh>=pi&&curPh<=pi+1?' active':'');});return;}
+  const mp={};phases.forEach((ph,i)=>{if(!mp[ph.member])mp[ph.member]=[];mp[ph.member].push(i);});
+  members.forEach((m,mi)=>{const p=document.getElementById('ppm'+mi);if(!p)return;const idxs=mp[m.name]||[];if(!idxs.length)return;const fi=idxs[0],li=idxs[idxs.length-1];const st=curPh>li?'done':curPh>=fi&&curPh<=li?'active':'';p.className='ppill '+st;const av=p.querySelector('div');if(av){av.style.background=st==='active'?'rgba(255,255,255,0.3)':cbg(mi);av.style.color=st==='active'?'#fff':cfg(mi);}});
+}
+
+function updatePLabel(){
+  const ph=phases[curPh];const el=document.getElementById('tphase');
+  if(!ph){el.textContent='✅ Completed!';el.style.color='#2e7d32';return;}
+  const isH=curMode==='half';const dist=isH?'500m':'1km';
+  if(ph.type==='run'){const stn=ph.sk?(isH?SS_H[ph.sk]:SS_F[ph.sk]):'';el.textContent='🏃 '+ph.member+' — Run ('+dist+')'+(stn?' → '+stn:'');el.style.color='#00695c';}
+  else{el.textContent='💪 '+ph.member+' — '+(ph.sk?(isH?SS_H[ph.sk]:SS_F[ph.sk]):'Station');el.style.color='#512da8';}
+}
+
+function setMode(m,btn){curMode=m;document.querySelectorAll('.mbtn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');document.getElementById('mdesc').textContent=MDESC[m];document.getElementById('pick-card').style.display=m==='solo'?'block':'none';buildPhases();buildPBar();resetTimer();}
+function selMem(i){selM=i;buildMBtns();buildPhases();buildPBar();resetTimer();}
+function tick(){document.getElementById('tdisp').textContent=fmt(elapsed+(performance.now()-tStart));}
+
+function startStop(){
+  if(!running){
+    if(!phases.length)buildPhases();
+    tStart=performance.now();running=true;tInt=setInterval(tick,100);
+    document.getElementById('startbtn').textContent='Pause';
+    document.getElementById('lapbtn').disabled=false;
+    updatePLabel();
+    document.getElementById('tsub').textContent='Tap LAP at each transition 👇';
+    document.getElementById('save-card').style.display='none';
+  }else{
+    elapsed+=performance.now()-tStart;clearInterval(tInt);running=false;
+    document.getElementById('startbtn').textContent='Resume';
+    document.getElementById('lapbtn').disabled=true;
+    document.getElementById('tsub').textContent='Paused';
+    showSave();
+  }
+}
+
+function markLap(){
+  const now=elapsed+(performance.now()-tStart);
+  const ph=phases[curPh];if(!ph)return;
+  const prev=laps.length?laps[laps.length-1].total:0;
+  laps.push({label:ph.label,type:ph.type,member:ph.member,sk:ph.sk||null,split:now-prev,total:now});
+  curPh++;refPBar();updLS();renderLaps();
+  if(curPh>=phases.length){
+    elapsed=now;clearInterval(tInt);running=false;
+    document.getElementById('startbtn').textContent='Resume';
+    document.getElementById('lapbtn').disabled=true;
+    document.getElementById('tsub').textContent='Done! Save below.';
+    showSave();
+  }else{updatePLabel();}
+}
+
+function updLS(){
+  const rL=laps.filter(l=>l.type==='run'),sL=laps.filter(l=>l.type==='station');
+  let h='';
+  if(rL.length)h+='<span class="sbadge run">🏃 '+fmt(rL[rL.length-1].split)+'</span>';
+  if(sL.length)h+='<span class="sbadge stn">💪 '+fmt(sL[sL.length-1].split)+'</span>';
+  document.getElementById('lsplits').innerHTML=h;
+}
+
+function renderLaps(){
+  const mi={};members.forEach((m,i)=>mi[m.name]=i);
+  document.getElementById('laps').innerHTML=laps.map(l=>{
+    const idx=mi[l.member]??0;
+    return'<div class="li '+(l.type==='run'?'r':'st')+'"><div class="lav" style="background:'+cbg(idx)+';color:'+cfg(idx)+'">'+ini(l.member)+'</div><span class="ll">'+l.label+'</span><span class="lt '+(l.type==='run'?'r':'s')+'">'+(l.type==='run'?'RUN':'STN')+'</span><span class="ls">'+fmt(l.split)+'</span></div>';
+  }).join('');
+}
+
+function resetTimer(){
+  clearInterval(tInt);running=false;elapsed=0;tStart=0;laps=[];curPh=0;
+  document.getElementById('tdisp').textContent='00:00.0';
+  document.getElementById('startbtn').textContent='Start';
+  document.getElementById('lapbtn').disabled=true;
+  document.getElementById('tphase').textContent='—';
+  document.getElementById('tphase').style.color='#888';
+  document.getElementById('tsub').textContent='Ready — press Start';
+  document.getElementById('laps').innerHTML='';
+  document.getElementById('lsplits').innerHTML='';
+  document.getElementById('save-card').style.display='none';
+  buildPhases();buildPBar();
+}
+
+function showSave(){
+  document.getElementById('save-card').style.display='block';
+  let rows='';
+  laps.forEach(l=>{rows+='<div class="sr"><span style="color:'+(l.type==='run'?'#00695c':'#512da8')+'">'+(l.type==='run'?'🏃':'💪')+' '+l.label+'</span><span class="st2">'+fmt(l.split)+'</span></div>';});
+  const total=laps.length?laps[laps.length-1].total:elapsed;
+  rows+='<div class="sr"><span><strong>Total</strong></span><span class="st2"><strong>'+fmt(total)+'</strong></span></div>';
+  document.getElementById('save-prev').innerHTML=rows;
+}
+
+async function saveSession(){
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true;btn.textContent='Saving...';
+  const total=laps.length?laps[laps.length-1].total:elapsed;
+  const sess={date:document.getElementById('sess-date').value,mode:curMode,total,laps:[...laps],ts:Date.now()};
+  sessions.unshift(sess);
+  await saveTeam();
+  btn.disabled=false;btn.textContent='Save & Sync';
+  document.getElementById('save-card').style.display='none';
+  resetTimer();
+  toast('Saved! 💪');
+}
+
+// ─── HISTORY ─────────────────────────────────────────────
+function renderHistory(){
+  updStats();
+  const ul=document.getElementById('hlist');
+  if(!sessions.length){ul.innerHTML='<div class="empty">No sessions yet. Let\'s train!</div>';return;}
+  ul.innerHTML=sessions.map((s,i)=>{
+    const prev=sessions.filter((x,j)=>j>i&&x.mode===s.mode);
+    const isPR=prev.length>0&&s.total<Math.min(...prev.map(x=>x.total));
+    const d=new Date(s.date+'T00:00').toLocaleDateString('en-MY',{day:'numeric',month:'short',year:'numeric'});
+    const mb=s.mode==='half'?'<span class="bhalf">HALF</span>':s.mode==='full'?'<span class="bfull">FULL</span>':'<span class="bind">SOLO</span>';
+    const rL=s.laps?s.laps.filter(l=>l.type==='run'):[];
+    const sL=s.laps?s.laps.filter(l=>l.type==='station'):[];
+    const sp=rL.length||sL.length?'🏃 '+rL.map(l=>fmt(l.split)).join(' ')+'  💪 '+sL.map(l=>fmt(l.split)).join(' '):'';
+    return'<div class="hr" onclick="detail('+i+')"><div style="flex:1;min-width:0"><div class="hd">'+d+' '+mb+'</div><div class="hs">'+sp+'</div></div><div style="display:flex;align-items:center;flex-shrink:0;margin-left:8px">'+(isPR?'<span class="bpr">PR</span>':'')+'<span class="ht">'+fmt(s.total)+'</span></div></div>';
+  }).join('');
+}
+
+function updStats(){
+  document.getElementById('s-days').textContent=new Set(sessions.map(s=>s.date)).size;
+  document.getElementById('s-sess').textContent=sessions.length;
+  const f=sessions.filter(s=>s.mode==='full');
+  document.getElementById('s-best').textContent=f.length?fmt(Math.min(...f.map(s=>s.total))):'—';
+}
+
+function detail(i){
+  const s=sessions[i];
+  const d=new Date(s.date+'T00:00').toLocaleDateString('en-MY',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  let msg=d+'\nMode: '+(s.mode==='full'?'Full':s.mode==='half'?'Half':'Solo')+'\nTotal: '+fmt(s.total);
+  if(s.laps&&s.laps.length){msg+='\n\nBreakdown:';s.laps.forEach(l=>msg+='\n'+(l.type==='run'?'🏃':'💪')+' '+l.label+': '+fmt(l.split));}
+  alert(msg);
+}
+
+// ─── TRAINING ────────────────────────────────────────────
+function renderTraining(){
+  const mi={};members.forEach((m,i)=>mi[m.name]=i);
+  document.getElementById('stn-list').innerHTML=STNS.map(st=>{
+    const owners=members.filter(m=>(asgn[m.name]||[]).includes(st.key));
+    const tag=owners.length?owners.map(o=>'<span style="font-size:10px;font-weight:600;color:'+cfg(mi[o.name]??0)+';background:'+cbg(mi[o.name]??0)+';padding:2px 6px;border-radius:20px;margin-right:2px">'+o.name+'</span>').join(''):'<span class="btbc">All members</span>';
+    return'<div class="stncard"><div class="stnhdr" onclick="toggleStn('+st.id+')"><div style="display:flex;align-items:flex-start;gap:5px;flex:1"><span class="stnnum">'+st.num+'</span><div><div class="stntitle">'+st.title+' <span style="font-size:10px;color:#888;font-weight:400">Full:'+st.full+' · Half:'+st.half+'</span></div><div class="stnsub">'+tag+'</div></div></div><span style="font-size:18px;color:#bbb;flex-shrink:0" id="arr'+st.id+'">+</span></div><div class="stnbody" id="stn'+st.id+'">'+st.ex.map(e=>'<div class="exrow"><div class="extop"><span class="exn">'+e.n+'</span><span class="exr"> · '+e.f+'</span><span class="exh">½ '+e.h+'</span><span class="tag '+(e.ty==='main'?'tm':e.ty==='run'?'tr':'ta')+'">'+(e.ty==='main'?'main':e.ty==='run'?'all':'also')+'</span></div><div class="ext">'+e.t+'</div></div>').join('')+'</div></div>';
+  }).join('');
+}
+function toggleStn(id){const b=document.getElementById('stn'+id),a=document.getElementById('arr'+id);const o=b.classList.toggle('open');a.textContent=o?'−':'+';}
+
+// ─── RECORDS ─────────────────────────────────────────────
+function renderRecords(){
+  const rec={};
+  members.forEach((m,i)=>{rec[m.name]={bestRun:null,bestStn:null,n:0};});
+  sessions.forEach(s=>{if(!s.laps)return;s.laps.forEach(l=>{if(!rec[l.member])return;if(l.type==='run'&&(rec[l.member].bestRun===null||l.split<rec[l.member].bestRun))rec[l.member].bestRun=l.split;if(l.type==='station'&&(rec[l.member].bestStn===null||l.split<rec[l.member].bestStn))rec[l.member].bestStn=l.split;if(l.type==='station')rec[l.member].n++;});});
+  document.getElementById('rec-list').innerHTML=members.map((m,i)=>{
+    const r=rec[m.name]||{bestRun:null,bestStn:null,n:0};
+    return'<div class="rrow"><div style="width:34px;height:34px;border-radius:50%;background:'+cbg(i)+';color:'+cfg(i)+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">'+ini(m.name)+'</div><div style="flex:1"><div style="font-size:13px;font-weight:600">'+m.name+'</div>'+(m.nick?'<div style="font-size:10px;color:#7c4dab;font-style:italic">'+m.nick+'</div>':'')+'<div style="display:flex;gap:12px;margin-top:4px"><div style="text-align:center"><div style="font-size:13px;font-weight:700;font-family:\'Courier New\',monospace;color:#00695c">'+(r.bestRun!==null?fmt(r.bestRun):'—')+'</div><div style="font-size:9px;color:#aaa">best run</div></div><div style="text-align:center"><div style="font-size:13px;font-weight:700;font-family:\'Courier New\',monospace;color:#512da8">'+(r.bestStn!==null?fmt(r.bestStn):'—')+'</div><div style="font-size:9px;color:#aaa">best stn</div></div></div><div style="font-size:10px;color:#aaa;margin-top:2px">'+slabel(m.name)+' · '+r.n+' session'+(r.n!==1?'s':'')+'</div></div></div>';
+  }).join('');
+}
+
+// ─── SETTINGS ────────────────────────────────────────────
+function buildSettings(){
+  document.getElementById('set-tname').value=tName;
+  document.getElementById('set-fmt').value=String(tFmt);
+  document.getElementById('set-mlist').innerHTML=members.map((m,i)=>'<div style="background:#f9f9f9;border-radius:10px;padding:11px;margin-bottom:8px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px"><div style="width:28px;height:28px;border-radius:50%;background:'+cbg(i)+';color:'+cfg(i)+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">'+ini(m.name)+'</div><div style="font-size:12px;font-weight:600;color:#888">Member '+(i+1)+'</div></div><div class="lbl">Name</div><input class="sinp" id="sn'+i+'" value="'+m.name+'" placeholder="Name"><div class="lbl">Nickname</div><input class="sinp" id="sk'+i+'" value="'+(m.nick||'')+'" placeholder="Nickname (optional)"></div>').join('');
+  const ac=document.getElementById('set-acard');
+  if(tFmt===1){ac.style.display='none';return;}
+  ac.style.display='block';
+  const spm=tFmt===2?4:2;
+  document.getElementById('set-ainfo').textContent=tFmt===2?'Optional: assign who leads each station.':'Assign stations — timer follows race order automatically.';
+  document.getElementById('set-alist').innerHTML=members.map((m,mi)=>'<div style="background:#f9f9f9;border-radius:10px;padding:11px;margin-bottom:8px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:50%;background:'+cbg(mi)+';color:'+cfg(mi)+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">'+ini(m.name)+'</div><div><div style="font-size:12px;font-weight:600">'+m.name+'</div>'+(m.nick?'<div style="font-size:10px;color:#7c4dab;font-style:italic">'+m.nick+'</div>':'')+'</div></div>'+Array.from({length:spm},(_,s)=>'<div style="font-size:11px;color:#888;margin-bottom:3px">Station '+(s+1)+(tFmt===2?' (opt)':'')+':</div><select class="ssel" id="sa'+mi+'_'+s+'">'+SOPTS.map(o=>'<option value="'+o.v+'"'+((asgn[m.name]||[])[s]===o.v?' selected':'')+'>'+o.l+'</option>').join('')+'</select>').join('')+'</div>').join('');
+}
+
+function saveTeamInfo(){
+  const tn=document.getElementById('set-tname').value.trim()||tName;
+  const nf=parseInt(document.getElementById('set-fmt').value)||tFmt;
+  if(nf!==tFmt){if(!confirm('Changing format resets assignments. Continue?'))return;tFmt=nf;asgn={};}
+  tName=tn;
+  while(members.length<tFmt)members.push({name:'Member '+(members.length+1),nick:''});
+  members=members.slice(0,tFmt);
+  updateHdr();buildSettings();saveTeam();toast('Saved! ✅');
+}
+
+function saveMembers(){
+  members=members.map((m,i)=>({...m,name:((document.getElementById('sn'+i)||{}).value||m.name).trim(),nick:((document.getElementById('sk'+i)||{}).value||'').trim()}));
+  updateHdr();buildMBtns();renderTraining();renderRecords();buildSettings();saveTeam();toast('Names saved! ✅');
+}
+
+function saveAssignments(){
+  const spm=tFmt===2?4:2;
+  members.forEach((m,mi)=>{asgn[m.name]=Array.from({length:spm},(_,s)=>{const e=document.getElementById('sa'+mi+'_'+s);return e?e.value:'tbc';});});
+  buildMBtns();renderTraining();buildPhases();buildPBar();saveTeam();toast('Assignments saved & synced! ✅');
+}
+
+function doReset(){if(confirm('Delete all data and start over?')){localStorage.clear();location.reload();}}
+
+function SP(p,btn){
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(e=>e.classList.remove('active'));
+  document.getElementById('p-'+p).classList.add('active');btn.classList.add('active');
+  if(p==='history'){loadTeam().then(()=>renderHistory()).catch(()=>renderHistory());}
+  if(p==='records')renderRecords();
+  if(p==='training')renderTraining();
+  if(p==='settings')buildSettings();
+}
+
+// ─── BOOT ─────────────────────────────────────────────────
+(async function boot(){
+  loadLocal();
+  if(localStorage.getItem('hyrox_ok')&&TEAM_ID&&members.length){
+    document.getElementById('main-app').style.display='block';
+    initApp();
+  }else{
+    hideLoader();
+    SS('s-welcome');
+  }
+})();
+</script>
+</body>
+</html>
